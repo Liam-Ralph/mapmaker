@@ -1,4 +1,5 @@
 # Imports
+
 import multiprocessing
 import os
 import PIL.Image
@@ -9,6 +10,7 @@ import traceback
 
 
 # Classes
+
 class Dot:
     def __init__(self, x, y, dot_type):
         self.x = x
@@ -17,9 +19,11 @@ class Dot:
 
 
 # Text Colors
+
 ANSI_GREEN = "\u001b[38;5;2m"
 ANSI_CYAN = "\u001b[38;5;6m"
 ANSI_RESET = "\u001b[0m"
+
 
 # Functions
 # (Alphabetical order)
@@ -37,6 +41,7 @@ def get_int(min, max):
         else:
             print("Input must be between", min, "and", max, "(both inclusive).")
     return choice
+
 
 # Multiprocessing Functions
 # (Order of use)
