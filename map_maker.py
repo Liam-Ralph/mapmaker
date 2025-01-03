@@ -407,4 +407,4 @@ if __name__ == "__main__":
         down_shift += section_height
     image.save("result.png")
 
-    print("{:.1f}".format(time.time() - start_time_main))
+    print(f"{time.time() - start_time_main:.2f}")
