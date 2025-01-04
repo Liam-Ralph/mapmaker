@@ -175,28 +175,25 @@ my_height, relative_island_abundance, dot_coords, width):
                 traceback.format_exc() + "\n")
 
 def assign_sections(process_num, section_assignment_progress,
-dot_coords_piece, dot_coords, island_size):
+origin_dots, dot_coords, island_size, local_dots):
     try:
 
-        dot_coords_xy = []
-        for dot in dot_coords:
-            dot_coords_xy.append((dot.x, dot.y))
-        tree = scipy.spatial.KDTree(dot_coords_xy)
+        tree = scipy.spatial.KDTree([(dot.x, dot.y) for dot in local_dots])
 
-        for i in range(len(dot_coords_piece)):
+        for i in range(len(origin_dots)):
 
-            dot = dot_coords_piece[i]
+            dot = origin_dots[i]
+            
+            expansions = random.randint(island_size // 2, island_size * 2)
+            indexes = tree.query([dot.x, dot.y], k = expansions + 1)[1]
 
-            if dot.type == "Land Start":
-                expansions = random.randint(island_size // 2, island_size * 2)
-                for ii in range(expansions):
-                    dd, ii_ = tree.query([dot.x, dot.y], k = [ii + 1])
-                    expansion_dot = dot_coords[ii_[0]]
-                    if expansion_dot.type == "Water":
-                        dot_coords[ii_[0]] = Dot(expansion_dot.x, expansion_dot.y, "Land")
+            for index in indexes:
+                ref_dot = local_dots[index]
+                if ref_dot.type == "Water":
+                    dot_coords[index] = Dot(ref_dot.x, ref_dot.y, "Land")
 
             section_assignment_progress[process_num] = (
-                (i + 1) / len(dot_coords_piece) * 100
+                (i + 1) / len(origin_dots) * 100
             )
 
     except Exception:
@@ -228,10 +225,7 @@ image_results, processes, dot_coords, width, height):
 
         image_section = PIL.Image.new("RGB", (width, reps), "white")
         pixels = image_section.load()
-        dot_coords_xy = []
-        for dot in dot_coords:
-            dot_coords_xy.append((dot.x, dot.y))
-        tree = scipy.spatial.KDTree(dot_coords_xy)
+        tree = scipy.spatial.KDTree([(dot.x, dot.y) for dot in dot_coords])
 
         start_num = process_num * (height // processes)
         for y in range(reps):
@@ -363,19 +357,22 @@ if __name__ == "__main__":
 
     # Section Assignment
 
-    piece_size = len(dot_coords) // processes
-    dot_coords_pieces = [
-        dot_coords[i : i + piece_size] for i in range(0, len(dot_coords), piece_size)
-    ]
-    dot_coords_pieces.append(dot_coords[i : len(dot_coords) - 1])
+    local_dots = []
+    local_dots.extend(dot_coords)
+
+    origin_dots = [dot for dot in local_dots if dot.type == "Land Start"]
+    num_origin_dots = len(origin_dots)
+
+    start_indexes = list(range(0, num_origin_dots, num_origin_dots // processes))
+    index_lengths = [num_origin_dots // processes] * (processes - 1)
 
     for i in range(processes - 1):
         process_list.append(multiprocessing.Process(target = assign_sections,
-            args = (i, section_assignment_progress, dot_coords_pieces[i],
-            dot_coords, island_size)))
+            args = (i, section_assignment_progress, origin_dots[start_indexes[i] : start_indexes[i] + index_lengths[i]],
+            dot_coords, island_size, local_dots)))
     process_list.append(multiprocessing.Process(target = assign_sections,
         args = (processes - 1, section_assignment_progress,
-        dot_coords_pieces[-1], dot_coords, island_size)))
+        origin_dots[num_origin_dots // processes * (processes - 1) : ], dot_coords, island_size, local_dots)))
     for process in process_list:
         process.start()
     for process in process_list:
