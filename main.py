@@ -193,7 +193,7 @@ dot_coords_piece, dot_coords, island_size):
                     dd, ii_ = tree.query([dot.x, dot.y], k = [ii + 1])
                     expansion_dot = dot_coords[ii_[0]]
                     if expansion_dot.type == "Water":
-                        expansion_dot.type = "Land"
+                        dot_coords[ii_[0]] = Dot(expansion_dot.x, expansion_dot.y, "Land")
 
             section_assignment_progress[process_num] = (
                 (i + 1) / len(dot_coords_piece) * 100
